@@ -85,6 +85,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println("usec\tgyroX\tgyroY\tgyroZ\taccX\taccY\taccZ")
 	for i, line := range strings.Split(string(data), "\n") {
 		if len(line) == 0 {
 			continue
@@ -92,7 +93,6 @@ func main() {
 		if !strings.HasPrefix(line, "0 133 ") {
 			continue
 		}
-		fmt.Println(line)
 		num, err := readBytes(line)
 		if err != nil {
 			log.Fatalf("Failed to parse line #%d: %s, err: %v", i, line, err)
@@ -101,6 +101,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("Failed to read log point at line #%d: %s, err: %v", i, line, err)
 		}
-		fmt.Printf("%+v\n", p)
+		fmt.Printf("%d\t%f\t%f\t%f\t%f\t%f\t%f\n", int64(p.Timestamp.Nanoseconds()/1000),
+			p.Gyro[0], p.Gyro[1], p.Gyro[2], p.Acc[0], p.Acc[1], p.Acc[2])
 	}
 }
