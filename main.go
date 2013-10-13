@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -58,16 +59,19 @@ func readPoint3d(in []byte) (out []byte, p Point3d, err error) {
 
 func readLogPoint(num []byte) (res *LogPoint, err error) {
 	res = new(LogPoint)
-	if num, res.Acc, err = readPoint3d(num); err != nil {
-		return
+	if len(num) < 2+2*3*4 {
+		return nil, io.ErrUnexpectedEOF
 	}
+	num = num[2:]
 	if num, res.Gyro, err = readPoint3d(num); err != nil {
 		return
 	}
+	if num, res.Acc, err = readPoint3d(num); err != nil {
+		return
+	}
 	var t int64
-	for _, v := range num {
-		t <<= 8
-		t += int64(v)
+	for i, v := range num {
+		t += int64(v) << (8 * uint(i))
 	}
 	res.Timestamp = time.Duration(t) * time.Microsecond
 	return
@@ -88,6 +92,7 @@ func main() {
 		if !strings.HasPrefix(line, "0 133 ") {
 			continue
 		}
+		fmt.Println(line)
 		num, err := readBytes(line)
 		if err != nil {
 			log.Fatalf("Failed to parse line #%d: %s, err: %v", i, line, err)
@@ -96,6 +101,6 @@ func main() {
 		if err != nil {
 			log.Fatalf("Failed to read log point at line #%d: %s, err: %v", i, line, err)
 		}
-		log.Print(p)
+		fmt.Printf("%+v\n", p)
 	}
 }
