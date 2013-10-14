@@ -84,6 +84,7 @@ func main() {
 	}
 	fmt.Println("usec\tgyroX\tgyroY\tgyroZ\taccX\taccY\taccZ")
 	for i, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
 		if len(line) == 0 {
 			continue
 		}
