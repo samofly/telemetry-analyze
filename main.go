@@ -63,7 +63,7 @@ func readLogPoint(num []byte) (res *LogPoint, err error) {
 	if num, res.Acc, err = readPoint3d(num, 2*8.0/65536); err != nil {
 		return
 	}
-	if num, res.Gyro, err = readPoint3d(num, 2*1000.0/65536); err != nil {
+	if num, res.Gyro, err = readPoint3d(num, 2*500.0/65536); err != nil {
 		return
 	}
 	var t int64
