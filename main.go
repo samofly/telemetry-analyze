@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -34,39 +33,37 @@ type LogPoint struct {
 	Gyro      Point3d
 }
 
-func readFloat32(in []byte) (out []byte, res float32, err error) {
-	if len(in) < 4 {
+func readInt16(in []byte) (out []byte, v int16, err error) {
+	if len(in) < 2 {
 		err = io.ErrUnexpectedEOF
 		return
 	}
-	out = in[4:]
-	num := uint32(in[0]) + uint32(in[1])<<8 + uint32(in[2])<<16 + uint32(in[3])<<24
-	res = math.Float32frombits(num)
+	out = in[2:]
+	v = int16(in[0]) + int16(in[1])<<8
 	return
 }
-
-func readPoint3d(in []byte) (out []byte, p Point3d, err error) {
+func readPoint3d(in []byte, k float64) (out []byte, p Point3d, err error) {
 	out = in
 	for i := range p {
-		var v float32
-		if out, v, err = readFloat32(out); err != nil {
+		var v int16
+		if out, v, err = readInt16(out); err != nil {
 			return
 		}
-		p[i] = float64(v)
+		p[i] = float64(v) * k
 	}
 	return
 }
 
 func readLogPoint(num []byte) (res *LogPoint, err error) {
 	res = new(LogPoint)
-	if len(num) < 2+2*3*4 {
+	if len(num) < 2+2*2*3 {
 		return nil, io.ErrUnexpectedEOF
 	}
 	num = num[2:]
-	if num, res.Gyro, err = readPoint3d(num); err != nil {
+	if num, res.Acc, err = readPoint3d(num, 2*8.0/65536); err != nil {
 		return
 	}
-	if num, res.Acc, err = readPoint3d(num); err != nil {
+	if num, res.Gyro, err = readPoint3d(num, 2*1000.0/65536); err != nil {
 		return
 	}
 	var t int64
