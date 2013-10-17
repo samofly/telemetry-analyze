@@ -32,6 +32,7 @@ type LogPoint struct {
 	Timestamp time.Duration
 	Acc       Point3d
 	Gyro      Point3d
+	Mag       Point3d
 }
 
 func readInt16(in []byte) (out []byte, v int16, err error) {
@@ -85,6 +86,10 @@ func readLogPoint(num []byte) (res *LogPoint, err error) {
 	if num, res.Gyro, err = readPoint3d(num, 2*500.0/65536); err != nil {
 		return
 	}
+	if num, res.Mag, err = readPoint3d(num, 1.0/2048); err != nil {
+		return
+	}
+
 	var t int64
 	for i, v := range num {
 		t += int64(v) << (8 * uint(i))
@@ -101,7 +106,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("index\tusec\taccX\taccY\taccZ\tgyroX\tgyroY\tgyroZ")
+	fmt.Println("index\tusec\taccX\taccY\taccZ\tgyroX\tgyroY\tgyroZ\tmagX\tmagY\tmagZ")
 	for i, line := range strings.Split(string(data), "\n") {
 		line = strings.TrimSpace(line)
 		if len(line) == 0 {
@@ -118,7 +123,9 @@ func main() {
 		if err != nil {
 			log.Fatalf("Failed to read log point at line #%d: %s, err: %v", i, line, err)
 		}
-		fmt.Printf("%d\t%d\t%f\t%f\t%f\t%f\t%f\t%f\n", p.Index, int64(p.Timestamp.Nanoseconds()/1000),
-			p.Acc[0], p.Acc[1], p.Acc[2], p.Gyro[0], p.Gyro[1], p.Gyro[2])
+		fmt.Printf("%d\t%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", p.Index, int64(p.Timestamp.Nanoseconds()/1000),
+			p.Acc[0], p.Acc[1], p.Acc[2],
+			p.Gyro[0], p.Gyro[1], p.Gyro[2],
+			p.Mag[0], p.Mag[1], p.Mag[2])
 	}
 }
