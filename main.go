@@ -28,6 +28,7 @@ func readBytes(line string) (res []byte, err error) {
 type Point3d [3]float64
 
 type LogPoint struct {
+	Index     int
 	Timestamp time.Duration
 	Acc       Point3d
 	Gyro      Point3d
@@ -42,6 +43,17 @@ func readInt16(in []byte) (out []byte, v int16, err error) {
 	v = int16(in[0]) + int16(in[1])<<8
 	return
 }
+
+func readUint32(in []byte) (out []byte, v uint32, err error) {
+	if len(in) < 4 {
+		err = io.ErrUnexpectedEOF
+		return
+	}
+	out = in[4:]
+	v = uint32(in[0]) + uint32(in[1])<<8 + uint32(in[2])<<16 + uint32(in[3])<<24
+	return
+}
+
 func readPoint3d(in []byte, k float64) (out []byte, p Point3d, err error) {
 	out = in
 	for i := range p {
@@ -60,6 +72,13 @@ func readLogPoint(num []byte) (res *LogPoint, err error) {
 		return nil, io.ErrUnexpectedEOF
 	}
 	num = num[2:]
+
+	var index uint32
+	if num, index, err = readUint32(num); err != nil {
+		return
+	}
+	res.Index = int(index)
+
 	if num, res.Acc, err = readPoint3d(num, 2*8.0/65536); err != nil {
 		return
 	}
@@ -82,7 +101,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("usec\taccX\taccY\taccZ\tgyroX\tgyroY\tgyroZ")
+	fmt.Println("index\tusec\taccX\taccY\taccZ\tgyroX\tgyroY\tgyroZ")
 	for i, line := range strings.Split(string(data), "\n") {
 		line = strings.TrimSpace(line)
 		if len(line) == 0 {
@@ -99,7 +118,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("Failed to read log point at line #%d: %s, err: %v", i, line, err)
 		}
-		fmt.Printf("%d\t%f\t%f\t%f\t%f\t%f\t%f\n", int64(p.Timestamp.Nanoseconds()/1000),
+		fmt.Printf("%d\t%d\t%f\t%f\t%f\t%f\t%f\t%f\n", p.Index, int64(p.Timestamp.Nanoseconds()/1000),
 			p.Acc[0], p.Acc[1], p.Acc[2], p.Gyro[0], p.Gyro[1], p.Gyro[2])
 	}
 }
